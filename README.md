@@ -93,8 +93,3 @@ For a full example of decoding and rendering a `dvi` file see my `React` app `dv
 ## A note about the `dvi-decode` source code
 
 `dvi-decode` is a `JWEB` literate program derived from Donald Knuth's `DVIType` `WEB` program. If you have an interest in understading how `dvi-decode` works, it is recommended that you read the `JWEB` source file `dvi-decode.md` rather than the generated `Javascript` source file.
-
-<br>
-If you find this software useful please consider making a contribution to support the development of free and open software:
-
-[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?business=4Y8W9NDGYET6A&no_recurring=0&currency_code=USD)
