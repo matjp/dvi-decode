@@ -88,6 +88,36 @@ function dviDecode(
 
 See the file `test/test.js` for an example of setting up the arguments and calling `dviDecode`.
 
+The returned document object can be rendered to the browser using the `CanvasRenderingContext2D` interface.
+
+For example, this code will render a single page from document `doc` to the rendering context `ctx` using the `OpenType.js` library:
+
+```js
+doc.pages[pageIndex].rules.forEach(
+  rule => ctx.fillRect(props.marginPixels + rule.x, rule.y, rule.w, rule.h)
+);
+doc.pages[pageIndex].pageFonts.forEach(
+  async pageFont => {
+    const docFont = props.doc.fonts.find(f => f.fontNum === pageFont.fontNum);
+    if (docFont) {
+      const otfFont = await opentype.load(docFont.fontPath + docFont.fontName);
+      if (otfFont) {
+        pageFont.glyphs.forEach(glyph => {
+          let otfGlyph = otfFont.glyphs.get(glyph.glyphIndex);
+          if (otfGlyph)
+            glyph.glyphSizes.forEach(glyphSize =>
+              glyphSize.glyphPlacements.forEach(glyphPlacement => 
+                otfGlyph.draw(ctx, props.marginPixels + glyphPlacement.x,
+                  glyphPlacement.y, glyphSize.sz, { features: {hinting: true} }
+                )
+              )
+            );
+        });
+      }
+    }
+});
+```
+
 For a full example of decoding and rendering a `dvi` file see my `React` app `dvi-viewer`.
 
 ## A note about the `dvi-decode` source code
