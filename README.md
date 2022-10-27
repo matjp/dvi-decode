@@ -118,7 +118,11 @@ doc.pages[pageIndex].pageFonts.forEach(
 });
 ```
 
-For a full example of decoding and rendering a `dvi` file see my `React` app `dvi-viewer`.
+## DVI Viewer App
+
+For a full example of decoding and rendering a `dvi` file see my `React` app [DVI Viewer](https://github.com/matjp/dvi-viewer).
+
+Try it on Github Pages: <https://matjp.github.io/dvi-viewer/>
 
 ## A note about the `dvi-decode` source code
 
