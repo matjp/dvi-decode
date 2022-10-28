@@ -6,6 +6,8 @@ A Javascript module that enables rendering of `LuaTeX` `dvi` files directly to t
 
 `dvi-decode` can run either in browser or with node.js, providing all necessary input files are made available (see Configuration below).
 
+Try my DVI Viewer app to see `dvi-decode` in action: <https://matjp.github.io/dvi-viewer/>
+
 ## LaTeX source assumptions
 
 In order for `dvi-decode` to interpret a `LuaTeX` `dvi` file correctly it makes some assumptions about the font settings in the `LaTeX` source file:
@@ -120,9 +122,7 @@ doc.pages[pageIndex].pageFonts.forEach(
 
 ## DVI Viewer App
 
-For a full example of decoding and rendering a `dvi` file see my `React` app [DVI Viewer](https://github.com/matjp/dvi-viewer).
-
-Try it on Github Pages: <https://matjp.github.io/dvi-viewer/>
+For a full example of decoding and rendering a `dvi` file see the source to my `React` app [DVI Viewer](https://github.com/matjp/dvi-viewer).
 
 ## A note about the `dvi-decode` source code
 
