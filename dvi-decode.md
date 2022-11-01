@@ -150,7 +150,7 @@ export async function dviDecode(
           @<Second pass - decode layout instructions@>
           resolve(JSON.stringify(outDoc));
         })       
-        .catch((e) => { reject(e.toString()) });           
+        .catch((e) => { reject(e.toString())} );
     } catch (e) {
       if (e instanceof Error)
         reject('!Error ' + e.name + ': ' + e.message);
@@ -839,7 +839,12 @@ type LuaGlyph = {
 ```ts
 @<Load the new font, unless there are problems@>=
 {
-  otfFont = await opentype.load(curDviFontFile);
+  try {
+    otfFont = await opentype.load(curDviFontFile);
+  } catch(err) {
+    log('!Error loading font file ' + curDviFontFile);
+    throw err;
+  }
   @<Load the lua font table@>
   debugLog('Font ' + e.toString() + ': file ' + curDviFontFile + ' opened:');
   if ((q <= 0) || (q >= 0o1000000000)) {
@@ -864,14 +869,19 @@ import { parse } from 'lua-json';
 
 ```ts
 @<Load the lua font table@>=
-const luaFontFileName = curDviFontName.split('.')[0].toLowerCase();
-if (isBrowser) {
-  await fetch(pLuaFontPath + luaFontFileName + '.lua').then((response) => response.text())
-    .then((text: string) => @<Process the lua font table@> )
-} else if (isNode) {
-  const fsPromises = await import(/* webpackIgnore: true */ 'fs/promises');
-  await fsPromises.readFile(pLuaFontPath + luaFontFileName + '.lua').then((data: any) => data.toString())
-    .then((text: string) => @<Process the lua font table@> );
+const luaFontFileName = pLuaFontPath + curDviFontName.split('.')[0].toLowerCase() + '.lua';
+try {
+  if (isBrowser) {
+    await fetch(luaFontFileName).then((response) => response.text())
+      .then((text: string) => @<Process the lua font table@> )
+  } else if (isNode) {
+    const fsPromises = await import(/* webpackIgnore: true */ 'fs/promises');
+    await fsPromises.readFile(luaFontFileName).then((data: any) => data.toString())
+      .then((text: string) => @<Process the lua font table@> );
+  }
+} catch(err) {
+  log('!Error loading lua font table ' + luaFontFileName);
+  throw err;
 }
 ```
 

@@ -609,62 +609,74 @@ async function defineFont(e) {
                 luaGlyphs: new Map()
             };
             {
-                otfFont = await opentype.load(curDviFontFile);
-                const luaFontFileName = curDviFontName.split('.')[0].toLowerCase();
-                if (isBrowser) {
-                    await fetch(pLuaFontPath + luaFontFileName + '.lua').then((response) => response.text())
-                        .then((text) => {
-                        const fontTableJSON = parse(text);
-                        const fontTableMap = new Map(Object.entries(fontTableJSON));
-                        const luaFontMap = new Map(Object.entries(fontTableMap.get("descriptions")));
-                        luaFontMap.forEach((value, key) => {
-                            let idx;
-                            let uc;
-                            for (const [k, v] of Object.entries(value)) {
-                                if (k === 'index')
-                                    idx = v;
-                                if (k === 'unicode') {
-                                    if (Number.parseInt(v) === NaN)
-                                        uc = v;
-                                    else
-                                        uc = v;
-                                }
-                            }
-                            if (dviFont.luaGlyphs)
-                                dviFont.luaGlyphs.set(key, {
-                                    index: idx,
-                                    unicode: uc
-                                });
-                        });
-                    });
+                try {
+                    otfFont = await opentype.load(curDviFontFile);
                 }
-                else if (isNode) {
-                    const fsPromises = await import(/* webpackIgnore: true */ 'fs/promises');
-                    await fsPromises.readFile(pLuaFontPath + luaFontFileName + '.lua').then((data) => data.toString())
-                        .then((text) => {
-                        const fontTableJSON = parse(text);
-                        const fontTableMap = new Map(Object.entries(fontTableJSON));
-                        const luaFontMap = new Map(Object.entries(fontTableMap.get("descriptions")));
-                        luaFontMap.forEach((value, key) => {
-                            let idx;
-                            let uc;
-                            for (const [k, v] of Object.entries(value)) {
-                                if (k === 'index')
-                                    idx = v;
-                                if (k === 'unicode') {
-                                    if (Number.parseInt(v) === NaN)
-                                        uc = v;
-                                    else
-                                        uc = v;
+                catch (err) {
+                    log('!Error loading font file ' + curDviFontFile);
+                    throw err;
+                }
+                const luaFontFileName = pLuaFontPath + curDviFontName.split('.')[0].toLowerCase() + '.lua';
+                try {
+                    if (isBrowser) {
+                        await fetch(luaFontFileName).then((response) => response.text())
+                            .then((text) => {
+                            const fontTableJSON = parse(text);
+                            const fontTableMap = new Map(Object.entries(fontTableJSON));
+                            const luaFontMap = new Map(Object.entries(fontTableMap.get("descriptions")));
+                            luaFontMap.forEach((value, key) => {
+                                let idx;
+                                let uc;
+                                for (const [k, v] of Object.entries(value)) {
+                                    if (k === 'index')
+                                        idx = v;
+                                    if (k === 'unicode') {
+                                        if (Number.parseInt(v) === NaN)
+                                            uc = v;
+                                        else
+                                            uc = v;
+                                    }
                                 }
-                            }
-                            if (dviFont.luaGlyphs)
-                                dviFont.luaGlyphs.set(key, {
-                                    index: idx,
-                                    unicode: uc
-                                });
+                                if (dviFont.luaGlyphs)
+                                    dviFont.luaGlyphs.set(key, {
+                                        index: idx,
+                                        unicode: uc
+                                    });
+                            });
                         });
-                    });
+                    }
+                    else if (isNode) {
+                        const fsPromises = await import(/* webpackIgnore: true */ 'fs/promises');
+                        await fsPromises.readFile(luaFontFileName).then((data) => data.toString())
+                            .then((text) => {
+                            const fontTableJSON = parse(text);
+                            const fontTableMap = new Map(Object.entries(fontTableJSON));
+                            const luaFontMap = new Map(Object.entries(fontTableMap.get("descriptions")));
+                            luaFontMap.forEach((value, key) => {
+                                let idx;
+                                let uc;
+                                for (const [k, v] of Object.entries(value)) {
+                                    if (k === 'index')
+                                        idx = v;
+                                    if (k === 'unicode') {
+                                        if (Number.parseInt(v) === NaN)
+                                            uc = v;
+                                        else
+                                            uc = v;
+                                    }
+                                }
+                                if (dviFont.luaGlyphs)
+                                    dviFont.luaGlyphs.set(key, {
+                                        index: idx,
+                                        unicode: uc
+                                    });
+                            });
+                        });
+                    }
+                }
+                catch (err) {
+                    log('!Error loading lua font table ' + luaFontFileName);
+                    throw err;
                 }
                 debugLog('Font ' + e.toString() + ': file ' + curDviFontFile + ' opened:');
                 if ((q <= 0) || (q >= 0o1000000000)) {
