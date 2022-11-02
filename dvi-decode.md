@@ -70,7 +70,7 @@ The `banner` string defined here should be changed whenever `dvi-decode` gets mo
 
 ```ts
 @<Module const...@>=
-const banner = "This is dvi-decode, Version 0.2";
+const banner = "This is dvi-decode, Version 0.2.1";
 ```
 
 ## The main program

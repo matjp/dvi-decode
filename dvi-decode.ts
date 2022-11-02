@@ -133,7 +133,7 @@ h:number;/* the height of the rule (can be negative) */
 
 
 
-const banner= "This is dvi-decode, Version 0.2";
+const banner= "This is dvi-decode, Version 0.2.1";
 
 
 
