@@ -143,7 +143,7 @@ rwi:number|undefined;
 
 
 
-const banner= "This is dvi-decode, Version 0.2.1";
+const banner= "This is dvi-decode, Version 0.2.2";
 
 
 

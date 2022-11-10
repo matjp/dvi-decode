@@ -18,7 +18,7 @@
 import opentype from 'opentype.js';
 import { isBrowser, isNode } from 'browser-or-node';
 import { parse } from 'lua-json';
-const banner = "This is dvi-decode, Version 0.2.1";
+const banner = "This is dvi-decode, Version 0.2.2";
 const lineLength = 79; /* bracketed lines of output will be at most this long */
 const stackSize = 100; /* DVI files shouldn't push beyond this depth */
 const set_char_0 = 0; /*typeset character 0 and move right*/
