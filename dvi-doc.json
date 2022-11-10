@@ -1,181 +1,219 @@
 {
-    "definitions": {},
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "https://example.com/object1666580942.json",
-    "title": "Root",
-    "type": "object",
-    "properties": {
-        "fonts": {
-            "$id": "#root/fonts",
-            "title": "Fonts",
-            "type": "array",
-            "default": [],
-            "items": {
-                "$id": "#root/fonts/items",
-                "title": "Items",
-                "type": "object",
-                "properties": {
-                    "fontNum": {
-                        "$id": "#root/fonts/items/fontNum",
-                        "title": "Fontnum",
-                        "type": "integer",
-                        "default": 0
-                    },
-                    "fontName": {
-                        "$id": "#root/fonts/items/fontName",
-                        "title": "Fontname",
-                        "type": "string",
-                        "default": "",
-                        "pattern": "^.*$"
-                    },
-                    "fontPath": {
-                        "$id": "#root/fonts/items/fontPath",
-                        "title": "Fontpath",
-                        "type": "string",
-                        "default": "",
-                        "pattern": "^.*$"
-                    },
-                    "fontFeatures": {
-                        "$id": "#root/fonts/items/fontFeatures",
-                        "title": "Fontfeatures",
-                        "type": "string",
-                        "default": "",
-                        "pattern": "^.*$"
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/Document",
+    "definitions": {
+        "Document": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "fonts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Font"
+                    }
+                },
+                "pages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Page"
                     }
                 }
-            }
+            },
+            "required": [
+                "fonts",
+                "pages"
+            ],
+            "title": "Document"
         },
-        "pages": {
-            "$id": "#root/pages",
-            "title": "Pages",
-            "type": "array",
-            "default": [],
-            "items": {
-                "$id": "#root/pages/items",
-                "title": "Items",
-                "type": "object",
-                "properties": {
-                    "pageFonts": {
-                        "$id": "#root/pages/items/pageFonts",
-                        "title": "Pagefonts",
-                        "type": "array",
-                        "default": [],
-                        "items": {
-                            "$id": "#root/pages/items/pageFonts/items",
-                            "title": "Items",
-                            "type": "object",
-                            "properties": {
-                                "fontNum": {
-                                    "$id": "#root/pages/items/pageFonts/items/fontNum",
-                                    "title": "Fontnum",
-                                    "type": "integer",
-                                    "default": 0
-                                },
-                                "glyphs": {
-                                    "$id": "#root/pages/items/pageFonts/items/glyphs",
-                                    "title": "Glyphs",
-                                    "type": "array",
-                                    "default": [],
-                                    "items": {
-                                        "$id": "#root/pages/items/pageFonts/items/glyphs/items",
-                                        "title": "Items",
-                                        "type": "object",
-                                        "properties": {
-                                            "glyphIndex": {
-                                                "$id": "#root/pages/items/pageFonts/items/glyphs/items/glyphIndex",
-                                                "title": "Glyphindex",
-                                                "type": "integer",
-                                                "default": 0
-                                            },
-                                            "glyphSizes": {
-                                                "$id": "#root/pages/items/pageFonts/items/glyphs/items/glyphSizes",
-                                                "title": "Glyphsizes",
-                                                "type": "array",
-                                                "default": [],
-                                                "items": {
-                                                    "$id": "#root/pages/items/pageFonts/items/glyphs/items/glyphSizes/items",
-                                                    "title": "Items",
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "sz": {
-                                                            "$id": "#root/pages/items/pageFonts/items/glyphs/items/glyphSizes/items/sz",
-                                                            "title": "Sz",
-                                                            "type": "integer",
-                                                            "default": 0
-                                                        },
-                                                        "glyphPlacements": {
-                                                            "$id": "#root/pages/items/pageFonts/items/glyphs/items/glyphSizes/items/glyphPlacements",
-                                                            "title": "Glyphplacements",
-                                                            "type": "array",
-                                                            "default": [],
-                                                            "items": {
-                                                                "$id": "#root/pages/items/pageFonts/items/glyphs/items/glyphSizes/items/glyphPlacements/items",
-                                                                "title": "Items",
-                                                                "type": "object",
-                                                                "properties": {
-                                                                    "x": {
-                                                                        "$id": "#root/pages/items/pageFonts/items/glyphs/items/glyphSizes/items/glyphPlacements/items/x",
-                                                                        "title": "X",
-                                                                        "type": "integer",
-                                                                        "default": 0
-                                                                    },
-                                                                    "y": {
-                                                                        "$id": "#root/pages/items/pageFonts/items/glyphs/items/glyphSizes/items/glyphPlacements/items/y",
-                                                                        "title": "Y",
-                                                                        "type": "integer",
-                                                                        "default": 0
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "rules": {
-                        "$id": "#root/pages/items/rules",
-                        "title": "Rules",
-                        "type": "array",
-                        "default": [],
-                        "items": {
-                            "$id": "#root/pages/items/rules/items",
-                            "title": "Items",
-                            "type": "object",
-                            "properties": {
-                                "x": {
-                                    "$id": "#root/pages/items/rules/items/x",
-                                    "title": "X",
-                                    "type": "integer",
-                                    "default": 0
-                                },
-                                "y": {
-                                    "$id": "#root/pages/items/rules/items/y",
-                                    "title": "Y",
-                                    "type": "integer",
-                                    "default": 0
-                                },
-                                "w": {
-                                    "$id": "#root/pages/items/rules/items/w",
-                                    "title": "W",
-                                    "type": "integer",
-                                    "default": 0
-                                },
-                                "h": {
-                                    "$id": "#root/pages/items/rules/items/h",
-                                    "title": "H",
-                                    "type": "integer",
-                                    "default": 0
-                                }
-                            }
-                        }
+        "Font": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "fontNum": {
+                    "type": "integer"
+                },
+                "fontName": {
+                    "type": "string"
+                },
+                "fontPath": {
+                    "type": "string"
+                },
+                "fontFeatures": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "fontFeatures",
+                "fontName",
+                "fontNum",
+                "fontPath"
+            ],
+            "title": "Font"
+        },
+        "Page": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "pageFonts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PageFont"
+                    }
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Rule"
+                    }
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Image"
                     }
                 }
-            }
+            },
+            "required": [
+                "images",
+                "pageFonts",
+                "rules"
+            ],
+            "title": "Page"
+        },
+        "Image": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "fileName": {
+                    "type": "string"
+                },
+                "llx": {
+                    "type": "integer"
+                },
+                "lly": {
+                    "type": "integer"
+                },
+                "urx": {
+                    "type": "integer"
+                },
+                "ury": {
+                    "type": "integer"
+                },
+                "rwi": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "fileName",
+                "llx",
+                "lly",
+                "rwi",
+                "urx",
+                "ury"
+            ],
+            "title": "Image"
+        },
+        "PageFont": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "fontNum": {
+                    "type": "integer"
+                },
+                "glyphs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Glyph"
+                    }
+                }
+            },
+            "required": [
+                "fontNum",
+                "glyphs"
+            ],
+            "title": "PageFont"
+        },
+        "Glyph": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "glyphIndex": {
+                    "type": "integer"
+                },
+                "glyphSizes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/GlyphSize"
+                    }
+                }
+            },
+            "required": [
+                "glyphIndex",
+                "glyphSizes"
+            ],
+            "title": "Glyph"
+        },
+        "GlyphSize": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "sz": {
+                    "type": "integer"
+                },
+                "glyphPlacements": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/GlyphPlacement"
+                    }
+                }
+            },
+            "required": [
+                "glyphPlacements",
+                "sz"
+            ],
+            "title": "GlyphSize"
+        },
+        "GlyphPlacement": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "x": {
+                    "type": "integer"
+                },
+                "y": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "x",
+                "y"
+            ],
+            "title": "GlyphPlacement"
+        },
+        "Rule": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "x": {
+                    "type": "integer"
+                },
+                "y": {
+                    "type": "integer"
+                },
+                "w": {
+                    "type": "integer"
+                },
+                "h": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "h",
+                "w",
+                "x",
+                "y"
+            ],
+            "title": "Rule"
         }
     }
 }

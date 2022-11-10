@@ -2,7 +2,7 @@ import { readFile } from 'fs';
 import { dviDecode } from '../out/dvi-decode.js';
 
 const dviFileName = '<path to your test dvi file>'; // e.g. '/home/<user>/dvi-files/intro.dvi'
-const luaFontPath = '<path to your LuaTex font cache>'; // e.g. '/home/<user>/.texlive2021/texmf-var/luatex-cache/generic/fonts/otl'
+const luaFontPath = '<path to your LuaTex font cache>'; // e.g. '/home/<user>/.texlive2022/texmf-var/luatex-cache/generic/fonts/otl'
 
 readFile(dviFileName, (err, dviData) => {
     if (err) {

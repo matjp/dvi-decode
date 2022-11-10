@@ -100,6 +100,7 @@ fontFeatures:string;
 type OutPage= {
 pageFonts:PageFont[];
 rules:OutRule[];
+images:OutImage[];
 }
 
 type PageFont= {
@@ -127,6 +128,15 @@ x:number;/* the x-coordinate of the start of the rule */
 y:number;/* the y-coordinate of the start of the rule */
 w:number;/* the width of the rule (can be negative) */
 h:number;/* the height of the rule (can be negative) */
+}
+
+type OutImage= {
+fileName:string|undefined;
+llx:number|undefined;
+lly:number|undefined;
+urx:number|undefined;
+ury:number|undefined;
+rwi:number|undefined;
 }
 
 
@@ -299,7 +309,8 @@ magnification:number,
 fontMap:Map<string,string> ,
 luaFontPath:string,
 debugMode?:boolean,
-logFunc?:(msg:string)=>void):Promise<string> {
+logFunc?:(msg:string)=>void):Promise<string> 
+{
 return new Promise((resolve,reject)=>{
 
 
@@ -1313,16 +1324,52 @@ case xxx1+3:
 
 
 {
-let mj= 'xxx \'';
+let special= '';
 badChar= false;
 if(p<0)error('string of negative length!');
 for(k= 1;k<=p;k++){
 q= getByte();
 if((q<0o40)||(q> 0o176))badChar= true;
-mj= mj+String.fromCodePoint(q);
+special= special+String.fromCodePoint(q);
 }
 if(badChar)error('non-ASCII character in xxx command!');
-major(mj+'\'');
+major('xxx \''+special+'\'');
+
+
+
+if(special.startsWith('PSfile=')&&special.length> 7){
+const psfileParams= special.substring(7,special.length-1).split(' ');
+let fileNameParam:string|undefined;
+let llxParam:number|undefined,llyParam:number|undefined,urxParam:number|undefined,
+uryParam:number|undefined,rwiParam:number|undefined;
+if(psfileParams.length>=1){
+fileNameParam= psfileParams[0].replaceAll('"','');
+psfileParams.forEach((param)=>{
+let paramParts= param.split('=');
+if(paramParts.length=== 2){
+switch(paramParts[0]){
+case'llx':llxParam= Number.parseInt(paramParts[1]);
+case'lly':llyParam= Number.parseInt(paramParts[1]);
+case'urx':urxParam= Number.parseInt(paramParts[1]);
+case'ury':uryParam= Number.parseInt(paramParts[1]);
+case'rwi':rwiParam= Number.parseInt(paramParts[1]);
+}
+}
+});
+}
+outPg.images.push({
+fileName:fileNameParam,
+llx:llxParam,
+lly:llyParam,
+urx:urxParam,
+ury:uryParam,
+rwi:rwiParam
+});
+}
+
+
+
+
 return true;
 }
 
@@ -1350,7 +1397,8 @@ function doPage():boolean{
 pageCount++;
 outPg= {
 pageFonts:[],
-rules:[]
+rules:[],
+images:[]
 };
 let o:number;/* operation code of the current command */
 let p:number,q:number;/* parameters of the current command */

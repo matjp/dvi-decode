@@ -135,7 +135,8 @@ export async function dviDecode(
   fontMap: Map<string,string>,
   luaFontPath: string,
   debugMode?: boolean,
-  logFunc?: (msg: string) => void): Promise<string> {
+  logFunc?: (msg: string) => void): Promise<string>
+{
   return new Promise((resolve, reject) => {    
     @<Get log function@>
     @<Set initial values@>
@@ -934,7 +935,7 @@ try {
 
 ## The output data structure
 
-`dviDecode` returns the fonts used along with the calculated glyph positions and sizes for each page of the document. All of this information is encapsulated in an `OutDocument` object, which contains an array of fonts and an array of pages.
+`dviDecode` returns the fonts used along with the calculated glyph positions and sizes for each page of the document. References to external image files are also returned for each page. All of this information is encapsulated in an `OutDocument` object.
 
 ```ts
 @<Type...@>=
@@ -953,6 +954,7 @@ type OutFont = {
 type OutPage = {
   pageFonts: PageFont[];
   rules: OutRule[];
+  images: OutImage[];
 }
 
 type PageFont = {
@@ -980,6 +982,15 @@ type OutRule = {
   y: number; /* the y-coordinate of the start of the rule */
   w: number; /* the width of the rule (can be negative) */
   h: number; /* the height of the rule (can be negative) */
+}
+
+type OutImage = {
+  fileName: string | undefined;
+  llx: number | undefined;
+  lly: number | undefined;
+  urx: number | undefined;
+  ury: number | undefined;
+  rwi: number | undefined;
 }
 ```
 
@@ -1308,7 +1319,8 @@ function doPage(): boolean {
   pageCount++;  
   outPg = {
     pageFonts: [],
-    rules: []
+    rules: [],
+    images: []
   };
   let o: number; /* operation code of the current command */
   let p: number, q: number; /* parameters of the current command */
@@ -1598,17 +1610,53 @@ case fnt_def1+3:
 ```ts
 @<Translate an xxx command and return@>=
 {
-  let mj = 'xxx \'';
+  let special = '';
   badChar = false;
   if (p < 0) error('string of negative length!');
   for (k = 1; k <= p; k++) {
     q = getByte();
     if ((q < 0o40) || (q > 0o176)) badChar = true;
-    mj = mj + String.fromCodePoint(q);    
+    special = special + String.fromCodePoint(q);    
   }
   if (badChar) error('non-ASCII character in xxx command!');
-  major(mj + '\'');
+  major('xxx \'' + special + '\'');
+
+  @<Check for a PSFile command and translate@>
+
   return true;
+}
+```
+
+```ts
+@<Check for a PSFile command and translate@>=
+if (special.startsWith('PSfile=') && special.length > 7) {
+  const psfileParams = special.substring(7, special.length-1).split(' ');
+  let fileNameParam: string | undefined;
+  let llxParam: number | undefined, llyParam: number | undefined, urxParam: number | undefined,
+      uryParam: number | undefined, rwiParam: number | undefined;
+  if (psfileParams.length >= 1) {
+    fileNameParam = psfileParams[0].replaceAll('"', '');
+    psfileParams.forEach((param) => {
+      let paramParts = param.split('=');
+      if (paramParts.length === 2) {
+        switch (paramParts[0]) {
+          case 'llx': llxParam = Number.parseInt(paramParts[1]);
+          case 'lly': llyParam = Number.parseInt(paramParts[1]);
+          case 'urx': urxParam = Number.parseInt(paramParts[1]);
+          case 'ury': uryParam = Number.parseInt(paramParts[1]);
+          case 'rwi': rwiParam = Number.parseInt(paramParts[1]);
+        }
+      }
+    });
+  }
+  outPg.images.push({
+    fileName: fileNameParam,
+    llx: llxParam,
+    lly: llyParam,
+    urx: urxParam,
+    ury: uryParam,
+    rwi: rwiParam
+  });  
 }
 ```
 
