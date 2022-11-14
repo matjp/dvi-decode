@@ -626,22 +626,12 @@ async function defineFont(e) {
                             const luaFontMap = new Map(Object.entries(fontTableMap.get("descriptions")));
                             luaFontMap.forEach((value, key) => {
                                 let idx;
-                                let uc;
                                 for (const [k, v] of Object.entries(value)) {
                                     if (k === 'index')
                                         idx = v;
-                                    if (k === 'unicode') {
-                                        if (Number.parseInt(v) === NaN)
-                                            uc = v;
-                                        else
-                                            uc = v;
-                                    }
                                 }
-                                if (dviFont.luaGlyphs)
-                                    dviFont.luaGlyphs.set(key, {
-                                        index: idx,
-                                        unicode: uc
-                                    });
+                                if (dviFont.luaGlyphs && idx)
+                                    dviFont.luaGlyphs.set(key, idx);
                             });
                         });
                     }
@@ -654,22 +644,12 @@ async function defineFont(e) {
                             const luaFontMap = new Map(Object.entries(fontTableMap.get("descriptions")));
                             luaFontMap.forEach((value, key) => {
                                 let idx;
-                                let uc;
                                 for (const [k, v] of Object.entries(value)) {
                                     if (k === 'index')
                                         idx = v;
-                                    if (k === 'unicode') {
-                                        if (Number.parseInt(v) === NaN)
-                                            uc = v;
-                                        else
-                                            uc = v;
-                                    }
                                 }
-                                if (dviFont.luaGlyphs)
-                                    dviFont.luaGlyphs.set(key, {
-                                        index: idx,
-                                        unicode: uc
-                                    });
+                                if (dviFont.luaGlyphs && idx)
+                                    dviFont.luaGlyphs.set(key, idx);
                             });
                         });
                     }
@@ -748,23 +728,6 @@ function outGlyphIndex(c) {
             outGlyph.glyphSizes.push(glyphSize);
         }
         glyphSize.glyphPlacements.push({ x: hh, y: vv });
-    }
-}
-function outUnicode(u) {
-    if (textBuf.length > lineLength - 2)
-        flushText();
-    //const v = u ? u as number : 46 // log a '.' character if there is no unicode value for the glyph
-    textBuf = textBuf + String.fromCodePoint(u);
-    if (curDviFont && curDviFont.otfFont) {
-        const cmap = curDviFont.otfFont.tables.cmap;
-        const gi = curDviFont.otfFont.tables.cmap.glyphIndexMap[u.toString()];
-        if (gi) {
-            outGlyphIndex(gi);
-            return gi;
-        }
-        else {
-            return undefined;
-        }
     }
 }
 function firstPar(o) {
@@ -1051,9 +1014,7 @@ function doPage() {
     let o; /* operation code of the current command */
     let p, q; /* parameters of the current command */
     let hhh; /* h, rounded to the nearest pixel */
-    let luaGlyph; /* the current glyph in the lua font table */
     let gi; /* the current glyph index */
-    let uc; /* the current glyph unicode value(s) */
     function moveRight(q) {
         if ((h > 0) && (q > 0)) {
             if (h > (infinity - q)) {
@@ -1164,38 +1125,13 @@ function doPage() {
             if (o < (set_char_0 + 128)) {
                 minor('setchar' + p.toString());
                 if (curDviFont.luaGlyphs) {
-                    luaGlyph = curDviFont.luaGlyphs.get(p.toString());
-                    if (luaGlyph) {
-                        uc = luaGlyph.unicode;
-                        if (uc) {
-                            if (typeof uc === "number") {
-                                gi = outUnicode(uc);
-                                if (gi)
-                                    finSet(gi);
-                            }
-                            else { /* we have multi-character glyph e.g. a ligature */
-                                gi = luaGlyph.index;
-                                if (gi) {
-                                    log('Multi-character glyph. Lua glyph index = ' + gi.toString());
-                                    if (gi <= curDviFont.fontEc)
-                                        outGlyphIndex(gi);
-                                    else
-                                        outGlyphIndex(notDefGlyph);
-                                    finSet(gi);
-                                }
-                            }
-                        }
-                        else { /* we have a non-unicode glyph */
-                            gi = luaGlyph.index;
-                            if (gi) {
-                                log('Non-unicode glyph. Lua glyph index = ' + gi.toString());
-                                if (gi <= curDviFont.fontEc)
-                                    outGlyphIndex(gi);
-                                else
-                                    outGlyphIndex(notDefGlyph);
-                                finSet(gi);
-                            }
-                        }
+                    gi = curDviFont.luaGlyphs.get(p.toString());
+                    if (gi) {
+                        if (gi <= curDviFont.fontEc)
+                            outGlyphIndex(gi);
+                        else
+                            outGlyphIndex(notDefGlyph);
+                        finSet(gi);
                     }
                 }
                 break translation_loop;
@@ -1205,304 +1141,104 @@ function doPage() {
                     case set1:
                         major('set' + (o - set1 + 1).toString() + ' ' + p.toString());
                         if (curDviFont.luaGlyphs) {
-                            luaGlyph = curDviFont.luaGlyphs.get(p.toString());
-                            if (luaGlyph) {
-                                uc = luaGlyph.unicode;
-                                if (uc) {
-                                    if (typeof uc === "number") {
-                                        gi = outUnicode(uc);
-                                        if (gi)
-                                            finSet(gi);
-                                    }
-                                    else { /* we have multi-character glyph e.g. a ligature */
-                                        gi = luaGlyph.index;
-                                        if (gi) {
-                                            log('Multi-character glyph. Lua glyph index = ' + gi.toString());
-                                            if (gi <= curDviFont.fontEc)
-                                                outGlyphIndex(gi);
-                                            else
-                                                outGlyphIndex(notDefGlyph);
-                                            finSet(gi);
-                                        }
-                                    }
-                                }
-                                else { /* we have a non-unicode glyph */
-                                    gi = luaGlyph.index;
-                                    if (gi) {
-                                        log('Non-unicode glyph. Lua glyph index = ' + gi.toString());
-                                        if (gi <= curDviFont.fontEc)
-                                            outGlyphIndex(gi);
-                                        else
-                                            outGlyphIndex(notDefGlyph);
-                                        finSet(gi);
-                                    }
-                                }
+                            gi = curDviFont.luaGlyphs.get(p.toString());
+                            if (gi) {
+                                if (gi <= curDviFont.fontEc)
+                                    outGlyphIndex(gi);
+                                else
+                                    outGlyphIndex(notDefGlyph);
+                                finSet(gi);
                             }
                         }
                         break translation_loop;
                     case set1 + 1:
                         major('set' + (o - set1 + 1).toString() + ' ' + p.toString());
                         if (curDviFont.luaGlyphs) {
-                            luaGlyph = curDviFont.luaGlyphs.get(p.toString());
-                            if (luaGlyph) {
-                                uc = luaGlyph.unicode;
-                                if (uc) {
-                                    if (typeof uc === "number") {
-                                        gi = outUnicode(uc);
-                                        if (gi)
-                                            finSet(gi);
-                                    }
-                                    else { /* we have multi-character glyph e.g. a ligature */
-                                        gi = luaGlyph.index;
-                                        if (gi) {
-                                            log('Multi-character glyph. Lua glyph index = ' + gi.toString());
-                                            if (gi <= curDviFont.fontEc)
-                                                outGlyphIndex(gi);
-                                            else
-                                                outGlyphIndex(notDefGlyph);
-                                            finSet(gi);
-                                        }
-                                    }
-                                }
-                                else { /* we have a non-unicode glyph */
-                                    gi = luaGlyph.index;
-                                    if (gi) {
-                                        log('Non-unicode glyph. Lua glyph index = ' + gi.toString());
-                                        if (gi <= curDviFont.fontEc)
-                                            outGlyphIndex(gi);
-                                        else
-                                            outGlyphIndex(notDefGlyph);
-                                        finSet(gi);
-                                    }
-                                }
+                            gi = curDviFont.luaGlyphs.get(p.toString());
+                            if (gi) {
+                                if (gi <= curDviFont.fontEc)
+                                    outGlyphIndex(gi);
+                                else
+                                    outGlyphIndex(notDefGlyph);
+                                finSet(gi);
                             }
                         }
                         break translation_loop;
                     case set1 + 2:
                         major('set' + (o - set1 + 1).toString() + ' ' + p.toString());
                         if (curDviFont.luaGlyphs) {
-                            luaGlyph = curDviFont.luaGlyphs.get(p.toString());
-                            if (luaGlyph) {
-                                uc = luaGlyph.unicode;
-                                if (uc) {
-                                    if (typeof uc === "number") {
-                                        gi = outUnicode(uc);
-                                        if (gi)
-                                            finSet(gi);
-                                    }
-                                    else { /* we have multi-character glyph e.g. a ligature */
-                                        gi = luaGlyph.index;
-                                        if (gi) {
-                                            log('Multi-character glyph. Lua glyph index = ' + gi.toString());
-                                            if (gi <= curDviFont.fontEc)
-                                                outGlyphIndex(gi);
-                                            else
-                                                outGlyphIndex(notDefGlyph);
-                                            finSet(gi);
-                                        }
-                                    }
-                                }
-                                else { /* we have a non-unicode glyph */
-                                    gi = luaGlyph.index;
-                                    if (gi) {
-                                        log('Non-unicode glyph. Lua glyph index = ' + gi.toString());
-                                        if (gi <= curDviFont.fontEc)
-                                            outGlyphIndex(gi);
-                                        else
-                                            outGlyphIndex(notDefGlyph);
-                                        finSet(gi);
-                                    }
-                                }
+                            gi = curDviFont.luaGlyphs.get(p.toString());
+                            if (gi) {
+                                if (gi <= curDviFont.fontEc)
+                                    outGlyphIndex(gi);
+                                else
+                                    outGlyphIndex(notDefGlyph);
+                                finSet(gi);
                             }
                         }
                         break translation_loop;
                     case set1 + 3:
                         major('set' + (o - set1 + 1).toString() + ' ' + p.toString());
                         if (curDviFont.luaGlyphs) {
-                            luaGlyph = curDviFont.luaGlyphs.get(p.toString());
-                            if (luaGlyph) {
-                                uc = luaGlyph.unicode;
-                                if (uc) {
-                                    if (typeof uc === "number") {
-                                        gi = outUnicode(uc);
-                                        if (gi)
-                                            finSet(gi);
-                                    }
-                                    else { /* we have multi-character glyph e.g. a ligature */
-                                        gi = luaGlyph.index;
-                                        if (gi) {
-                                            log('Multi-character glyph. Lua glyph index = ' + gi.toString());
-                                            if (gi <= curDviFont.fontEc)
-                                                outGlyphIndex(gi);
-                                            else
-                                                outGlyphIndex(notDefGlyph);
-                                            finSet(gi);
-                                        }
-                                    }
-                                }
-                                else { /* we have a non-unicode glyph */
-                                    gi = luaGlyph.index;
-                                    if (gi) {
-                                        log('Non-unicode glyph. Lua glyph index = ' + gi.toString());
-                                        if (gi <= curDviFont.fontEc)
-                                            outGlyphIndex(gi);
-                                        else
-                                            outGlyphIndex(notDefGlyph);
-                                        finSet(gi);
-                                    }
-                                }
+                            gi = curDviFont.luaGlyphs.get(p.toString());
+                            if (gi) {
+                                if (gi <= curDviFont.fontEc)
+                                    outGlyphIndex(gi);
+                                else
+                                    outGlyphIndex(notDefGlyph);
+                                finSet(gi);
                             }
                         }
                         break translation_loop;
                     case put1:
                         major('put' + (o - put1 + 1).toString() + ' ' + p.toString());
                         if (curDviFont.luaGlyphs) {
-                            luaGlyph = curDviFont.luaGlyphs.get(p.toString());
-                            if (luaGlyph) {
-                                uc = luaGlyph.unicode;
-                                if (uc) {
-                                    if (typeof uc === "number") {
-                                        gi = outUnicode(uc);
-                                        if (gi)
-                                            finSet(gi);
-                                    }
-                                    else { /* we have multi-character glyph e.g. a ligature */
-                                        gi = luaGlyph.index;
-                                        if (gi) {
-                                            log('Multi-character glyph. Lua glyph index = ' + gi.toString());
-                                            if (gi <= curDviFont.fontEc)
-                                                outGlyphIndex(gi);
-                                            else
-                                                outGlyphIndex(notDefGlyph);
-                                            finSet(gi);
-                                        }
-                                    }
-                                }
-                                else { /* we have a non-unicode glyph */
-                                    gi = luaGlyph.index;
-                                    if (gi) {
-                                        log('Non-unicode glyph. Lua glyph index = ' + gi.toString());
-                                        if (gi <= curDviFont.fontEc)
-                                            outGlyphIndex(gi);
-                                        else
-                                            outGlyphIndex(notDefGlyph);
-                                        finSet(gi);
-                                    }
-                                }
+                            gi = curDviFont.luaGlyphs.get(p.toString());
+                            if (gi) {
+                                if (gi <= curDviFont.fontEc)
+                                    outGlyphIndex(gi);
+                                else
+                                    outGlyphIndex(notDefGlyph);
+                                finSet(gi);
                             }
                         }
                         break translation_loop;
                     case put1 + 1:
                         major('put' + (o - put1 + 1).toString() + ' ' + p.toString());
                         if (curDviFont.luaGlyphs) {
-                            luaGlyph = curDviFont.luaGlyphs.get(p.toString());
-                            if (luaGlyph) {
-                                uc = luaGlyph.unicode;
-                                if (uc) {
-                                    if (typeof uc === "number") {
-                                        gi = outUnicode(uc);
-                                        if (gi)
-                                            finSet(gi);
-                                    }
-                                    else { /* we have multi-character glyph e.g. a ligature */
-                                        gi = luaGlyph.index;
-                                        if (gi) {
-                                            log('Multi-character glyph. Lua glyph index = ' + gi.toString());
-                                            if (gi <= curDviFont.fontEc)
-                                                outGlyphIndex(gi);
-                                            else
-                                                outGlyphIndex(notDefGlyph);
-                                            finSet(gi);
-                                        }
-                                    }
-                                }
-                                else { /* we have a non-unicode glyph */
-                                    gi = luaGlyph.index;
-                                    if (gi) {
-                                        log('Non-unicode glyph. Lua glyph index = ' + gi.toString());
-                                        if (gi <= curDviFont.fontEc)
-                                            outGlyphIndex(gi);
-                                        else
-                                            outGlyphIndex(notDefGlyph);
-                                        finSet(gi);
-                                    }
-                                }
+                            gi = curDviFont.luaGlyphs.get(p.toString());
+                            if (gi) {
+                                if (gi <= curDviFont.fontEc)
+                                    outGlyphIndex(gi);
+                                else
+                                    outGlyphIndex(notDefGlyph);
+                                finSet(gi);
                             }
                         }
                         break translation_loop;
                     case put1 + 2:
                         major('put' + (o - put1 + 1).toString() + ' ' + p.toString());
                         if (curDviFont.luaGlyphs) {
-                            luaGlyph = curDviFont.luaGlyphs.get(p.toString());
-                            if (luaGlyph) {
-                                uc = luaGlyph.unicode;
-                                if (uc) {
-                                    if (typeof uc === "number") {
-                                        gi = outUnicode(uc);
-                                        if (gi)
-                                            finSet(gi);
-                                    }
-                                    else { /* we have multi-character glyph e.g. a ligature */
-                                        gi = luaGlyph.index;
-                                        if (gi) {
-                                            log('Multi-character glyph. Lua glyph index = ' + gi.toString());
-                                            if (gi <= curDviFont.fontEc)
-                                                outGlyphIndex(gi);
-                                            else
-                                                outGlyphIndex(notDefGlyph);
-                                            finSet(gi);
-                                        }
-                                    }
-                                }
-                                else { /* we have a non-unicode glyph */
-                                    gi = luaGlyph.index;
-                                    if (gi) {
-                                        log('Non-unicode glyph. Lua glyph index = ' + gi.toString());
-                                        if (gi <= curDviFont.fontEc)
-                                            outGlyphIndex(gi);
-                                        else
-                                            outGlyphIndex(notDefGlyph);
-                                        finSet(gi);
-                                    }
-                                }
+                            gi = curDviFont.luaGlyphs.get(p.toString());
+                            if (gi) {
+                                if (gi <= curDviFont.fontEc)
+                                    outGlyphIndex(gi);
+                                else
+                                    outGlyphIndex(notDefGlyph);
+                                finSet(gi);
                             }
                         }
                         break translation_loop;
                     case put1 + 3:
                         major('put' + (o - put1 + 1).toString() + ' ' + p.toString());
                         if (curDviFont.luaGlyphs) {
-                            luaGlyph = curDviFont.luaGlyphs.get(p.toString());
-                            if (luaGlyph) {
-                                uc = luaGlyph.unicode;
-                                if (uc) {
-                                    if (typeof uc === "number") {
-                                        gi = outUnicode(uc);
-                                        if (gi)
-                                            finSet(gi);
-                                    }
-                                    else { /* we have multi-character glyph e.g. a ligature */
-                                        gi = luaGlyph.index;
-                                        if (gi) {
-                                            log('Multi-character glyph. Lua glyph index = ' + gi.toString());
-                                            if (gi <= curDviFont.fontEc)
-                                                outGlyphIndex(gi);
-                                            else
-                                                outGlyphIndex(notDefGlyph);
-                                            finSet(gi);
-                                        }
-                                    }
-                                }
-                                else { /* we have a non-unicode glyph */
-                                    gi = luaGlyph.index;
-                                    if (gi) {
-                                        log('Non-unicode glyph. Lua glyph index = ' + gi.toString());
-                                        if (gi <= curDviFont.fontEc)
-                                            outGlyphIndex(gi);
-                                        else
-                                            outGlyphIndex(notDefGlyph);
-                                        finSet(gi);
-                                    }
-                                }
+                            gi = curDviFont.luaGlyphs.get(p.toString());
+                            if (gi) {
+                                if (gi <= curDviFont.fontEc)
+                                    outGlyphIndex(gi);
+                                else
+                                    outGlyphIndex(notDefGlyph);
+                                finSet(gi);
                             }
                         }
                         break translation_loop;

@@ -73,15 +73,8 @@ fontEc:number;/* ending character in font */
 width:number[];/* character widths, in DVI units */
 pixelWidth:number[];/* actual character widths, in pixels */
 otfFont:Font|undefined;/* file handle of the corresponding OTF Font */
-luaGlyphs:Map<string,LuaGlyph> |undefined;
+luaGlyphs:Map<string,number> |undefined;
 };
-
-
-
-type LuaGlyph= {
-index:number|undefined;
-unicode:number|number[]|undefined;/* could be a number or an array of numbers making up a ligature */
-}
 
 
 
@@ -906,21 +899,11 @@ const fontTableMap= new Map(Object.entries(fontTableJSON));
 const luaFontMap= new Map(Object.entries(fontTableMap.get("descriptions")));
 luaFontMap.forEach((value:any,key:string)=>{
 let idx;
-let uc;
 for(const[k,v]of Object.entries(value)){
 if(k=== 'index')idx= v as number;
-if(k=== 'unicode'){
-if(Number.parseInt(v as string)=== NaN)
-uc= v as Array<number> 
-else
-uc= v as number;
 }
-}
-if(dviFont.luaGlyphs)
-dviFont.luaGlyphs.set(key,{
-index:idx,
-unicode:uc
-});
+if(dviFont.luaGlyphs&&idx)
+dviFont.luaGlyphs.set(key,idx);
 });
 }
 
@@ -937,21 +920,11 @@ const fontTableMap= new Map(Object.entries(fontTableJSON));
 const luaFontMap= new Map(Object.entries(fontTableMap.get("descriptions")));
 luaFontMap.forEach((value:any,key:string)=>{
 let idx;
-let uc;
 for(const[k,v]of Object.entries(value)){
 if(k=== 'index')idx= v as number;
-if(k=== 'unicode'){
-if(Number.parseInt(v as string)=== NaN)
-uc= v as Array<number> 
-else
-uc= v as number;
 }
-}
-if(dviFont.luaGlyphs)
-dviFont.luaGlyphs.set(key,{
-index:idx,
-unicode:uc
-});
+if(dviFont.luaGlyphs&&idx)
+dviFont.luaGlyphs.set(key,idx);
 });
 }
 
@@ -1056,24 +1029,6 @@ outGlyph.glyphSizes.push(glyphSize);
 }
 
 glyphSize.glyphPlacements.push({x:hh,y:vv});
-}
-}
-
-
-
-function outUnicode(u:number):number|undefined{// returns the glyph index if found
-if(textBuf.length> lineLength-2)flushText();
-//const v = u ? u as number : 46 // log a '.' character if there is no unicode value for the glyph
-textBuf= textBuf+String.fromCodePoint(u);
-if(curDviFont&&curDviFont.otfFont){
-const cmap= curDviFont.otfFont.tables.cmap;
-const gi= curDviFont.otfFont.tables.cmap.glyphIndexMap[u.toString()];
-if(gi){
-outGlyphIndex(gi);
-return gi;
-}else{
-return undefined;
-}
 }
 }
 
@@ -1407,9 +1362,7 @@ images:[]
 let o:number;/* operation code of the current command */
 let p:number,q:number;/* parameters of the current command */
 let hhh:number;/* h, rounded to the nearest pixel */
-let luaGlyph:LuaGlyph|undefined;/* the current glyph in the lua font table */
 let gi:number|undefined;/* the current glyph index */
-let uc:number|number[]|undefined;/* the current glyph unicode value(s) */
 
 
 function moveRight(q:number){
@@ -1541,36 +1494,13 @@ minor('setchar'+p.toString());
 
 
 if(curDviFont.luaGlyphs){
-luaGlyph= curDviFont.luaGlyphs.get(p.toString());
-if(luaGlyph){
-uc= luaGlyph.unicode;
-if(uc){
-if(typeof uc=== "number"){
-gi= outUnicode(uc);
-if(gi)
-finSet(gi);
-}else{/* we have multi-character glyph e.g. a ligature */
-gi= luaGlyph.index;
+gi= curDviFont.luaGlyphs.get(p.toString());
 if(gi){
-log('Multi-character glyph. Lua glyph index = '+gi.toString());
 if(gi<=curDviFont.fontEc)
 outGlyphIndex(gi)
 else
 outGlyphIndex(notDefGlyph);
 finSet(gi);
-}
-}
-}else{/* we have a non-unicode glyph */
-gi= luaGlyph.index;
-if(gi){
-log('Non-unicode glyph. Lua glyph index = '+gi.toString());
-if(gi<=curDviFont.fontEc)
-outGlyphIndex(gi)
-else
-outGlyphIndex(notDefGlyph);
-finSet(gi);
-}
-}
 }
 }
 break translation_loop;
@@ -1590,36 +1520,13 @@ major('set'+(o-set1+1).toString()+' '+p.toString());
 
 
 if(curDviFont.luaGlyphs){
-luaGlyph= curDviFont.luaGlyphs.get(p.toString());
-if(luaGlyph){
-uc= luaGlyph.unicode;
-if(uc){
-if(typeof uc=== "number"){
-gi= outUnicode(uc);
-if(gi)
-finSet(gi);
-}else{/* we have multi-character glyph e.g. a ligature */
-gi= luaGlyph.index;
+gi= curDviFont.luaGlyphs.get(p.toString());
 if(gi){
-log('Multi-character glyph. Lua glyph index = '+gi.toString());
 if(gi<=curDviFont.fontEc)
 outGlyphIndex(gi)
 else
 outGlyphIndex(notDefGlyph);
 finSet(gi);
-}
-}
-}else{/* we have a non-unicode glyph */
-gi= luaGlyph.index;
-if(gi){
-log('Non-unicode glyph. Lua glyph index = '+gi.toString());
-if(gi<=curDviFont.fontEc)
-outGlyphIndex(gi)
-else
-outGlyphIndex(notDefGlyph);
-finSet(gi);
-}
-}
 }
 }
 break translation_loop;
@@ -1636,36 +1543,13 @@ major('set'+(o-set1+1).toString()+' '+p.toString());
 
 
 if(curDviFont.luaGlyphs){
-luaGlyph= curDviFont.luaGlyphs.get(p.toString());
-if(luaGlyph){
-uc= luaGlyph.unicode;
-if(uc){
-if(typeof uc=== "number"){
-gi= outUnicode(uc);
-if(gi)
-finSet(gi);
-}else{/* we have multi-character glyph e.g. a ligature */
-gi= luaGlyph.index;
+gi= curDviFont.luaGlyphs.get(p.toString());
 if(gi){
-log('Multi-character glyph. Lua glyph index = '+gi.toString());
 if(gi<=curDviFont.fontEc)
 outGlyphIndex(gi)
 else
 outGlyphIndex(notDefGlyph);
 finSet(gi);
-}
-}
-}else{/* we have a non-unicode glyph */
-gi= luaGlyph.index;
-if(gi){
-log('Non-unicode glyph. Lua glyph index = '+gi.toString());
-if(gi<=curDviFont.fontEc)
-outGlyphIndex(gi)
-else
-outGlyphIndex(notDefGlyph);
-finSet(gi);
-}
-}
 }
 }
 break translation_loop;
@@ -1682,36 +1566,13 @@ major('set'+(o-set1+1).toString()+' '+p.toString());
 
 
 if(curDviFont.luaGlyphs){
-luaGlyph= curDviFont.luaGlyphs.get(p.toString());
-if(luaGlyph){
-uc= luaGlyph.unicode;
-if(uc){
-if(typeof uc=== "number"){
-gi= outUnicode(uc);
-if(gi)
-finSet(gi);
-}else{/* we have multi-character glyph e.g. a ligature */
-gi= luaGlyph.index;
+gi= curDviFont.luaGlyphs.get(p.toString());
 if(gi){
-log('Multi-character glyph. Lua glyph index = '+gi.toString());
 if(gi<=curDviFont.fontEc)
 outGlyphIndex(gi)
 else
 outGlyphIndex(notDefGlyph);
 finSet(gi);
-}
-}
-}else{/* we have a non-unicode glyph */
-gi= luaGlyph.index;
-if(gi){
-log('Non-unicode glyph. Lua glyph index = '+gi.toString());
-if(gi<=curDviFont.fontEc)
-outGlyphIndex(gi)
-else
-outGlyphIndex(notDefGlyph);
-finSet(gi);
-}
-}
 }
 }
 break translation_loop;
@@ -1728,36 +1589,13 @@ major('set'+(o-set1+1).toString()+' '+p.toString());
 
 
 if(curDviFont.luaGlyphs){
-luaGlyph= curDviFont.luaGlyphs.get(p.toString());
-if(luaGlyph){
-uc= luaGlyph.unicode;
-if(uc){
-if(typeof uc=== "number"){
-gi= outUnicode(uc);
-if(gi)
-finSet(gi);
-}else{/* we have multi-character glyph e.g. a ligature */
-gi= luaGlyph.index;
+gi= curDviFont.luaGlyphs.get(p.toString());
 if(gi){
-log('Multi-character glyph. Lua glyph index = '+gi.toString());
 if(gi<=curDviFont.fontEc)
 outGlyphIndex(gi)
 else
 outGlyphIndex(notDefGlyph);
 finSet(gi);
-}
-}
-}else{/* we have a non-unicode glyph */
-gi= luaGlyph.index;
-if(gi){
-log('Non-unicode glyph. Lua glyph index = '+gi.toString());
-if(gi<=curDviFont.fontEc)
-outGlyphIndex(gi)
-else
-outGlyphIndex(notDefGlyph);
-finSet(gi);
-}
-}
 }
 }
 break translation_loop;
@@ -1774,36 +1612,13 @@ major('put'+(o-put1+1).toString()+' '+p.toString());
 
 
 if(curDviFont.luaGlyphs){
-luaGlyph= curDviFont.luaGlyphs.get(p.toString());
-if(luaGlyph){
-uc= luaGlyph.unicode;
-if(uc){
-if(typeof uc=== "number"){
-gi= outUnicode(uc);
-if(gi)
-finSet(gi);
-}else{/* we have multi-character glyph e.g. a ligature */
-gi= luaGlyph.index;
+gi= curDviFont.luaGlyphs.get(p.toString());
 if(gi){
-log('Multi-character glyph. Lua glyph index = '+gi.toString());
 if(gi<=curDviFont.fontEc)
 outGlyphIndex(gi)
 else
 outGlyphIndex(notDefGlyph);
 finSet(gi);
-}
-}
-}else{/* we have a non-unicode glyph */
-gi= luaGlyph.index;
-if(gi){
-log('Non-unicode glyph. Lua glyph index = '+gi.toString());
-if(gi<=curDviFont.fontEc)
-outGlyphIndex(gi)
-else
-outGlyphIndex(notDefGlyph);
-finSet(gi);
-}
-}
 }
 }
 break translation_loop;
@@ -1820,36 +1635,13 @@ major('put'+(o-put1+1).toString()+' '+p.toString());
 
 
 if(curDviFont.luaGlyphs){
-luaGlyph= curDviFont.luaGlyphs.get(p.toString());
-if(luaGlyph){
-uc= luaGlyph.unicode;
-if(uc){
-if(typeof uc=== "number"){
-gi= outUnicode(uc);
-if(gi)
-finSet(gi);
-}else{/* we have multi-character glyph e.g. a ligature */
-gi= luaGlyph.index;
+gi= curDviFont.luaGlyphs.get(p.toString());
 if(gi){
-log('Multi-character glyph. Lua glyph index = '+gi.toString());
 if(gi<=curDviFont.fontEc)
 outGlyphIndex(gi)
 else
 outGlyphIndex(notDefGlyph);
 finSet(gi);
-}
-}
-}else{/* we have a non-unicode glyph */
-gi= luaGlyph.index;
-if(gi){
-log('Non-unicode glyph. Lua glyph index = '+gi.toString());
-if(gi<=curDviFont.fontEc)
-outGlyphIndex(gi)
-else
-outGlyphIndex(notDefGlyph);
-finSet(gi);
-}
-}
 }
 }
 break translation_loop;
@@ -1866,36 +1658,13 @@ major('put'+(o-put1+1).toString()+' '+p.toString());
 
 
 if(curDviFont.luaGlyphs){
-luaGlyph= curDviFont.luaGlyphs.get(p.toString());
-if(luaGlyph){
-uc= luaGlyph.unicode;
-if(uc){
-if(typeof uc=== "number"){
-gi= outUnicode(uc);
-if(gi)
-finSet(gi);
-}else{/* we have multi-character glyph e.g. a ligature */
-gi= luaGlyph.index;
+gi= curDviFont.luaGlyphs.get(p.toString());
 if(gi){
-log('Multi-character glyph. Lua glyph index = '+gi.toString());
 if(gi<=curDviFont.fontEc)
 outGlyphIndex(gi)
 else
 outGlyphIndex(notDefGlyph);
 finSet(gi);
-}
-}
-}else{/* we have a non-unicode glyph */
-gi= luaGlyph.index;
-if(gi){
-log('Non-unicode glyph. Lua glyph index = '+gi.toString());
-if(gi<=curDviFont.fontEc)
-outGlyphIndex(gi)
-else
-outGlyphIndex(notDefGlyph);
-finSet(gi);
-}
-}
 }
 }
 break translation_loop;
@@ -1912,36 +1681,13 @@ major('put'+(o-put1+1).toString()+' '+p.toString());
 
 
 if(curDviFont.luaGlyphs){
-luaGlyph= curDviFont.luaGlyphs.get(p.toString());
-if(luaGlyph){
-uc= luaGlyph.unicode;
-if(uc){
-if(typeof uc=== "number"){
-gi= outUnicode(uc);
-if(gi)
-finSet(gi);
-}else{/* we have multi-character glyph e.g. a ligature */
-gi= luaGlyph.index;
+gi= curDviFont.luaGlyphs.get(p.toString());
 if(gi){
-log('Multi-character glyph. Lua glyph index = '+gi.toString());
 if(gi<=curDviFont.fontEc)
 outGlyphIndex(gi)
 else
 outGlyphIndex(notDefGlyph);
 finSet(gi);
-}
-}
-}else{/* we have a non-unicode glyph */
-gi= luaGlyph.index;
-if(gi){
-log('Non-unicode glyph. Lua glyph index = '+gi.toString());
-if(gi<=curDviFont.fontEc)
-outGlyphIndex(gi)
-else
-outGlyphIndex(notDefGlyph);
-finSet(gi);
-}
-}
 }
 }
 break translation_loop;
