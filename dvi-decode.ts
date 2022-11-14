@@ -135,7 +135,7 @@ h:number;/* the scaled height of the image in pixels */
 
 
 
-const banner= "This is dvi-decode, Version 0.2.2";
+const banner= "This is dvi-decode, Version 0.2.3";
 
 
 
