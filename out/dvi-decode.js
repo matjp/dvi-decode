@@ -987,12 +987,17 @@ function specialCases(o, p) {
                     error('non-ASCII character in xxx command!');
                 major('xxx \'' + special + '\'');
                 if (special.startsWith('PSfile=') && special.length > 7) {
-                    const psfileParams = special.substring(7, special.length - 1).split(' ');
-                    let fileNameParam;
-                    let llxParam, llyParam, urxParam, uryParam, rwiParam;
-                    if (psfileParams.length >= 1) {
-                        fileNameParam = psfileParams[0].replaceAll('"', '');
-                        psfileParams.forEach((param) => {
+                    const psFileParams = special.substring(7, special.length - 1).split(' ');
+                    let fileNameParam = '';
+                    let llxParam = 0;
+                    let llyParam = 0;
+                    let urxParam = 0;
+                    let uryParam = 0;
+                    let rwiParam = 0;
+                    let rhiParam = 0;
+                    if (psFileParams.length >= 1) {
+                        fileNameParam = psFileParams[0].replaceAll('"', '');
+                        psFileParams.forEach((param) => {
                             let paramParts = param.split('=');
                             if (paramParts.length === 2) {
                                 switch (paramParts[0]) {
@@ -1001,17 +1006,22 @@ function specialCases(o, p) {
                                     case 'urx': urxParam = Number.parseInt(paramParts[1]);
                                     case 'ury': uryParam = Number.parseInt(paramParts[1]);
                                     case 'rwi': rwiParam = Number.parseInt(paramParts[1]);
+                                    case 'rhi': rhiParam = Number.parseInt(paramParts[1]);
                                 }
                             }
                         });
                     }
+                    const psWidthScaleFactor = (rwiParam === 0) ? 1 : (rwiParam / 10) / (urxParam - llxParam);
+                    const psHeightScaleFactor = (rhiParam === 0) ? psWidthScaleFactor : (rhiParam / 10) / (uryParam - llyParam);
+                    const pixelScaleFactor = (pDisplayDPI / 72) * (mag / 1000.0);
+                    const widthPixels = Math.floor((urxParam - llxParam) * psWidthScaleFactor * pixelScaleFactor);
+                    const heightPixels = Math.floor((uryParam - llyParam) * psHeightScaleFactor * pixelScaleFactor);
                     outPg.images.push({
                         fileName: fileNameParam,
-                        llx: llxParam,
-                        lly: llyParam,
-                        urx: urxParam,
-                        ury: uryParam,
-                        rwi: rwiParam
+                        x: hh,
+                        y: vv - heightPixels,
+                        w: widthPixels,
+                        h: heightPixels
                     });
                 }
                 return true;

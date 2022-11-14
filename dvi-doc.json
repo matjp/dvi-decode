@@ -87,29 +87,25 @@
                 "fileName": {
                     "type": "string"
                 },
-                "llx": {
+                "x": {
                     "type": "integer"
                 },
-                "lly": {
+                "y": {
                     "type": "integer"
                 },
-                "urx": {
+                "w": {
                     "type": "integer"
                 },
-                "ury": {
-                    "type": "integer"
-                },
-                "rwi": {
+                "h": {
                     "type": "integer"
                 }
             },
             "required": [
                 "fileName",
-                "llx",
-                "lly",
-                "rwi",
-                "urx",
-                "ury"
+                "x",
+                "y",
+                "w",
+                "h"
             ],
             "title": "Image"
         },

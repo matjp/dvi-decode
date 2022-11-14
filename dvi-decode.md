@@ -985,12 +985,11 @@ type OutRule = {
 }
 
 type OutImage = {
-  fileName: string | undefined;
-  llx: number | undefined;
-  lly: number | undefined;
-  urx: number | undefined;
-  ury: number | undefined;
-  rwi: number | undefined;
+  fileName: string;
+  x: number; /* the x-coordinate of the top left corner of the image placement */
+  y: number; /* the y-coordinate of the top left corner of the image placement */
+  w: number; /* the scaled width of the image in pixels */
+  h: number; /* the scaled height of the image in pixels */
 }
 ```
 
@@ -1630,13 +1629,13 @@ case fnt_def1+3:
 ```ts
 @<Check for a PSFile command and translate@>=
 if (special.startsWith('PSfile=') && special.length > 7) {
-  const psfileParams = special.substring(7, special.length-1).split(' ');
-  let fileNameParam: string | undefined;
-  let llxParam: number | undefined, llyParam: number | undefined, urxParam: number | undefined,
-      uryParam: number | undefined, rwiParam: number | undefined;
-  if (psfileParams.length >= 1) {
-    fileNameParam = psfileParams[0].replaceAll('"', '');
-    psfileParams.forEach((param) => {
+  const psFileParams = special.substring(7, special.length-1).split(' ');
+  let fileNameParam: string = '';
+  let llxParam: number = 0; let llyParam: number = 0; let urxParam: number = 0;
+  let uryParam: number = 0; let rwiParam: number = 0; let rhiParam: number = 0;
+  if (psFileParams.length >= 1) {
+    fileNameParam = psFileParams[0].replaceAll('"', '');
+    psFileParams.forEach((param) => {
       let paramParts = param.split('=');
       if (paramParts.length === 2) {
         switch (paramParts[0]) {
@@ -1645,17 +1644,22 @@ if (special.startsWith('PSfile=') && special.length > 7) {
           case 'urx': urxParam = Number.parseInt(paramParts[1]);
           case 'ury': uryParam = Number.parseInt(paramParts[1]);
           case 'rwi': rwiParam = Number.parseInt(paramParts[1]);
+          case 'rhi': rhiParam = Number.parseInt(paramParts[1]);
         }
       }
     });
   }
+  const psWidthScaleFactor = (rwiParam === 0) ? 1 : (rwiParam / 10) / (urxParam - llxParam);
+  const psHeightScaleFactor = (rhiParam === 0) ? psWidthScaleFactor : (rhiParam / 10) / (uryParam - llyParam);
+  const pixelScaleFactor = (pDisplayDPI / 72) * (mag / 1000.0);
+  const widthPixels = Math.floor((urxParam - llxParam) * psWidthScaleFactor * pixelScaleFactor);  
+  const heightPixels = Math.floor((uryParam - llyParam) * psHeightScaleFactor * pixelScaleFactor);
   outPg.images.push({
     fileName: fileNameParam,
-    llx: llxParam,
-    lly: llyParam,
-    urx: urxParam,
-    ury: uryParam,
-    rwi: rwiParam
+    x: hh,
+    y: vv - heightPixels, /* adjust the bottom left origin of a postscript image to the top left for JavaScript drawImage function */    
+    w: widthPixels,
+    h: heightPixels
   });  
 }
 ```
@@ -1764,7 +1768,7 @@ function finRule() {
     const height = rulePixels(p);
     outPg.rules.push({
       x: hh,
-      y: vv - height, /* adjust the bottom left origin of a TeX rule to the top left origin of a Javscript fillRect */
+      y: vv - height, /* adjust the bottom left origin of a TeX rule to the top left origin of a Javsacript fillRect */
       w: width,
       h: height
     });
