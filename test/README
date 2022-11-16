@@ -4,6 +4,5 @@ In the font.map file set the location of each font in the file.
 You can also add any additional fonts you may want to test.
 
 In the file test.js, set the path to a test dvi file.
-Also, set the path to your LuaTeX font cache.
 
 To run use `npm run test`.

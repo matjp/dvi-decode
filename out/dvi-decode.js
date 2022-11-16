@@ -16,8 +16,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
   */
 import opentype from 'opentype.js';
-import { isBrowser, isNode } from 'browser-or-node';
-import { parse } from 'lua-json';
 const banner = "This is dvi-decode, Version 0.2.3";
 const lineLength = 79; /* bracketed lines of output will be at most this long */
 const stackSize = 100; /* DVI files shouldn't push beyond this depth */
@@ -61,7 +59,6 @@ const invalidWidth = infinity;
 const notDefGlyph = 0;
 //const maxDrift = 2 /* we insist that abs(hh-Math.round(conv*(h))) <= maxDrift */
 let pDviData;
-let pLuaFontPath;
 let pDisplayDPI;
 let k, m, n, p, q; /* general purpose registers */
 let firstPass;
@@ -106,7 +103,7 @@ let conv; /* converts DVI units to pixels */
 let trueConv; /* converts unmagnified DVI units to pixels */
 let numerator, denominator; /* stated conversion ratio */
 let mag; /* magnification factor times 1000 */
-export async function dviDecode(dviData, displayDPI, magnification, fontMap, luaFontPath, debugMode, logFunc) {
+export async function dviDecode(dviData, displayDPI, magnification, fontMap, debugMode, logFunc) {
     return new Promise((resolve, reject) => {
         log = logFunc ? logFunc : console.log;
         startVals = 0;
@@ -176,7 +173,6 @@ export async function dviDecode(dviData, displayDPI, magnification, fontMap, lua
                 throw '!No DVI input provided.';
             pDisplayDPI = displayDPI === (null || undefined) ? 96 : displayDPI;
             pNewMag = magnification === (null || undefined) ? 0 : magnification;
-            pLuaFontPath = luaFontPath === (null || undefined) ? '' : luaFontPath.endsWith('/') ? luaFontPath : luaFontPath + '/';
             pFontMap = fontMap;
             pDebugMode = debugMode === (null || undefined) ? false : debugMode;
             log(banner);
@@ -554,8 +550,10 @@ async function defineFont(e) {
             words = leftSide.split('/');
             curDviFontName = words[words.length - 1];
             curDviFontFeatures = rightSide;
-            if (!curDviFontFeatures.includes('mode=harf') || !curDviFontFeatures.includes('shaper=ot'))
+            /*
+              if (!curDviFontFeatures.includes('mode=harf') || !curDviFontFeatures.includes('shaper=ot'))
                 badDvi('OpenType renderer option not found for font ' + curDviFontName + ':' + curDviFontFeatures + ', try adding Renderer=OpenType to font definition in the LaTeX source.');
+              */
         }
         st = st + curDviFontName;
         curDviFontFile = curDviFontName;
@@ -605,8 +603,7 @@ async function defineFont(e) {
                 fontEc: 0,
                 width: [],
                 pixelWidth: [],
-                otfFont: undefined,
-                luaGlyphs: new Map()
+                otfFont: undefined
             };
             {
                 try {
@@ -614,48 +611,6 @@ async function defineFont(e) {
                 }
                 catch (err) {
                     log('!Error loading font file ' + curDviFontFile);
-                    throw err;
-                }
-                const luaFontFileName = pLuaFontPath + curDviFontName.split('.')[0].toLowerCase() + '.lua';
-                try {
-                    if (isBrowser) {
-                        await fetch(luaFontFileName).then((response) => response.text())
-                            .then((text) => {
-                            const fontTableJSON = parse(text);
-                            const fontTableMap = new Map(Object.entries(fontTableJSON));
-                            const luaFontMap = new Map(Object.entries(fontTableMap.get("descriptions")));
-                            luaFontMap.forEach((value, key) => {
-                                let idx;
-                                for (const [k, v] of Object.entries(value)) {
-                                    if (k === 'index')
-                                        idx = v;
-                                }
-                                if (dviFont.luaGlyphs && idx)
-                                    dviFont.luaGlyphs.set(key, idx);
-                            });
-                        });
-                    }
-                    else if (isNode) {
-                        const fsPromises = await import(/* webpackIgnore: true */ 'fs/promises');
-                        await fsPromises.readFile(luaFontFileName).then((data) => data.toString())
-                            .then((text) => {
-                            const fontTableJSON = parse(text);
-                            const fontTableMap = new Map(Object.entries(fontTableJSON));
-                            const luaFontMap = new Map(Object.entries(fontTableMap.get("descriptions")));
-                            luaFontMap.forEach((value, key) => {
-                                let idx;
-                                for (const [k, v] of Object.entries(value)) {
-                                    if (k === 'index')
-                                        idx = v;
-                                }
-                                if (dviFont.luaGlyphs && idx)
-                                    dviFont.luaGlyphs.set(key, idx);
-                            });
-                        });
-                    }
-                }
-                catch (err) {
-                    log('!Error loading lua font table ' + luaFontFileName);
                     throw err;
                 }
                 debugLog('Font ' + e.toString() + ': file ' + curDviFontFile + ' opened:');
@@ -1124,123 +1079,78 @@ function doPage() {
         translation_loop: while (true) {
             if (o < (set_char_0 + 128)) {
                 minor('setchar' + p.toString());
-                if (curDviFont.luaGlyphs) {
-                    gi = curDviFont.luaGlyphs.get(p.toString());
-                    if (gi) {
-                        if (gi <= curDviFont.fontEc)
-                            outGlyphIndex(gi);
-                        else
-                            outGlyphIndex(notDefGlyph);
-                        finSet(gi);
-                    }
-                }
+                if (p <= curDviFont.fontEc)
+                    outGlyphIndex(p);
+                else
+                    outGlyphIndex(notDefGlyph);
+                finSet(p);
                 break translation_loop;
             }
             else
                 switch (o) {
                     case set1:
                         major('set' + (o - set1 + 1).toString() + ' ' + p.toString());
-                        if (curDviFont.luaGlyphs) {
-                            gi = curDviFont.luaGlyphs.get(p.toString());
-                            if (gi) {
-                                if (gi <= curDviFont.fontEc)
-                                    outGlyphIndex(gi);
-                                else
-                                    outGlyphIndex(notDefGlyph);
-                                finSet(gi);
-                            }
-                        }
+                        if (p <= curDviFont.fontEc)
+                            outGlyphIndex(p);
+                        else
+                            outGlyphIndex(notDefGlyph);
+                        finSet(p);
                         break translation_loop;
                     case set1 + 1:
                         major('set' + (o - set1 + 1).toString() + ' ' + p.toString());
-                        if (curDviFont.luaGlyphs) {
-                            gi = curDviFont.luaGlyphs.get(p.toString());
-                            if (gi) {
-                                if (gi <= curDviFont.fontEc)
-                                    outGlyphIndex(gi);
-                                else
-                                    outGlyphIndex(notDefGlyph);
-                                finSet(gi);
-                            }
-                        }
+                        if (p <= curDviFont.fontEc)
+                            outGlyphIndex(p);
+                        else
+                            outGlyphIndex(notDefGlyph);
+                        finSet(p);
                         break translation_loop;
                     case set1 + 2:
                         major('set' + (o - set1 + 1).toString() + ' ' + p.toString());
-                        if (curDviFont.luaGlyphs) {
-                            gi = curDviFont.luaGlyphs.get(p.toString());
-                            if (gi) {
-                                if (gi <= curDviFont.fontEc)
-                                    outGlyphIndex(gi);
-                                else
-                                    outGlyphIndex(notDefGlyph);
-                                finSet(gi);
-                            }
-                        }
+                        if (p <= curDviFont.fontEc)
+                            outGlyphIndex(p);
+                        else
+                            outGlyphIndex(notDefGlyph);
+                        finSet(p);
                         break translation_loop;
                     case set1 + 3:
                         major('set' + (o - set1 + 1).toString() + ' ' + p.toString());
-                        if (curDviFont.luaGlyphs) {
-                            gi = curDviFont.luaGlyphs.get(p.toString());
-                            if (gi) {
-                                if (gi <= curDviFont.fontEc)
-                                    outGlyphIndex(gi);
-                                else
-                                    outGlyphIndex(notDefGlyph);
-                                finSet(gi);
-                            }
-                        }
+                        if (p <= curDviFont.fontEc)
+                            outGlyphIndex(p);
+                        else
+                            outGlyphIndex(notDefGlyph);
+                        finSet(p);
                         break translation_loop;
                     case put1:
                         major('put' + (o - put1 + 1).toString() + ' ' + p.toString());
-                        if (curDviFont.luaGlyphs) {
-                            gi = curDviFont.luaGlyphs.get(p.toString());
-                            if (gi) {
-                                if (gi <= curDviFont.fontEc)
-                                    outGlyphIndex(gi);
-                                else
-                                    outGlyphIndex(notDefGlyph);
-                                finSet(gi);
-                            }
-                        }
+                        if (p <= curDviFont.fontEc)
+                            outGlyphIndex(p);
+                        else
+                            outGlyphIndex(notDefGlyph);
+                        finSet(p);
                         break translation_loop;
                     case put1 + 1:
                         major('put' + (o - put1 + 1).toString() + ' ' + p.toString());
-                        if (curDviFont.luaGlyphs) {
-                            gi = curDviFont.luaGlyphs.get(p.toString());
-                            if (gi) {
-                                if (gi <= curDviFont.fontEc)
-                                    outGlyphIndex(gi);
-                                else
-                                    outGlyphIndex(notDefGlyph);
-                                finSet(gi);
-                            }
-                        }
+                        if (p <= curDviFont.fontEc)
+                            outGlyphIndex(p);
+                        else
+                            outGlyphIndex(notDefGlyph);
+                        finSet(p);
                         break translation_loop;
                     case put1 + 2:
                         major('put' + (o - put1 + 1).toString() + ' ' + p.toString());
-                        if (curDviFont.luaGlyphs) {
-                            gi = curDviFont.luaGlyphs.get(p.toString());
-                            if (gi) {
-                                if (gi <= curDviFont.fontEc)
-                                    outGlyphIndex(gi);
-                                else
-                                    outGlyphIndex(notDefGlyph);
-                                finSet(gi);
-                            }
-                        }
+                        if (p <= curDviFont.fontEc)
+                            outGlyphIndex(p);
+                        else
+                            outGlyphIndex(notDefGlyph);
+                        finSet(p);
                         break translation_loop;
                     case put1 + 3:
                         major('put' + (o - put1 + 1).toString() + ' ' + p.toString());
-                        if (curDviFont.luaGlyphs) {
-                            gi = curDviFont.luaGlyphs.get(p.toString());
-                            if (gi) {
-                                if (gi <= curDviFont.fontEc)
-                                    outGlyphIndex(gi);
-                                else
-                                    outGlyphIndex(notDefGlyph);
-                                finSet(gi);
-                            }
-                        }
+                        if (p <= curDviFont.fontEc)
+                            outGlyphIndex(p);
+                        else
+                            outGlyphIndex(notDefGlyph);
+                        finSet(p);
                         break translation_loop;
                     case set_rule:
                         major('setrule');
