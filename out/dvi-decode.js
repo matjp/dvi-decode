@@ -1,3 +1,4 @@
+"use strict";
 /*
     dvi-decode. A driver for decoding device independent files produced by LuaTeX.
     Copyright (C) 2022  Matthew J. Penwill
@@ -15,7 +16,12 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
   */
-import opentype from 'opentype.js';
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.dviDecode = void 0;
+const opentype_js_1 = __importDefault(require("opentype.js"));
 const banner = "This is dvi-decode, Version 0.3.0";
 const lineLength = 79; /* bracketed lines of output will be at most this long */
 const stackSize = 100; /* DVI files shouldn't push beyond this depth */
@@ -103,7 +109,7 @@ let conv; /* converts DVI units to pixels */
 let trueConv; /* converts unmagnified DVI units to pixels */
 let numerator, denominator; /* stated conversion ratio */
 let mag; /* magnification factor times 1000 */
-export async function dviDecode(dviData, displayDPI, magnification, fontMap, debugMode, logFunc) {
+async function dviDecode(dviData, displayDPI, magnification, fontMap, debugMode, logFunc) {
     return new Promise((resolve, reject) => {
         log = logFunc ? logFunc : console.log;
         startVals = 0;
@@ -400,6 +406,7 @@ export async function dviDecode(dviData, displayDPI, magnification, fontMap, deb
         }
     });
 }
+exports.dviDecode = dviDecode;
 function abort(s) {
     throw new Error(s);
 }
@@ -607,7 +614,7 @@ async function defineFont(e) {
             };
             {
                 try {
-                    otfFont = await opentype.load(curDviFontFile);
+                    otfFont = await opentype_js_1.default.load(curDviFontFile);
                 }
                 catch (err) {
                     log('!Error loading font file ' + curDviFontFile);
