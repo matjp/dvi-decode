@@ -1540,12 +1540,12 @@ if (special.startsWith('PSfile=') && special.length > 7) {
       let paramParts = param.split('=');
       if (paramParts.length === 2) {
         switch (paramParts[0]) {
-          case 'llx': llxParam = Number.parseInt(paramParts[1]);
-          case 'lly': llyParam = Number.parseInt(paramParts[1]);
-          case 'urx': urxParam = Number.parseInt(paramParts[1]);
-          case 'ury': uryParam = Number.parseInt(paramParts[1]);
-          case 'rwi': rwiParam = Number.parseInt(paramParts[1]);
-          case 'rhi': rhiParam = Number.parseInt(paramParts[1]);
+          case 'llx': llxParam = Number.parseInt(paramParts[1]); break;
+          case 'lly': llyParam = Number.parseInt(paramParts[1]); break;
+          case 'urx': urxParam = Number.parseInt(paramParts[1]); break;
+          case 'ury': uryParam = Number.parseInt(paramParts[1]); break;
+          case 'rwi': rwiParam = Number.parseInt(paramParts[1]); break;
+          case 'rhi': rhiParam = Number.parseInt(paramParts[1]); break;
         }
       }
     });
